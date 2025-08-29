@@ -65,8 +65,46 @@ setup_tmux() {
     echo "✓ tmux configuration setup complete"
 }
 
+# Function to setup mylazyvim configuration
+setup_mylazyvim() {
+    local nvim_dir="$HOME/.config/nvim"
+    local backup_dir="$HOME/.config/nvim.bak"
+    local repo_url="git@github.com:bitquester10/mylazyvim.git"
+
+    echo "Setting up mylazyvim configuration..."
+
+    # Create .config directory if it doesn't exist
+    mkdir -p "$HOME/.config"
+
+    # If nvim directory exists, rename it to backup
+    if [[ -d "$nvim_dir" ]]; then
+        echo "Existing nvim config found, backing up to $backup_dir"
+        # Remove existing backup if it exists
+        if [[ -d "$backup_dir" ]]; then
+            echo "Removing existing backup at $backup_dir"
+            rm -rf "$backup_dir"
+        fi
+        mv "$nvim_dir" "$backup_dir"
+    fi
+
+    # Clone the mylazyvim repository
+    echo "Cloning mylazyvim repository to $nvim_dir"
+    if git clone "$repo_url" "$nvim_dir"; then
+        echo "✓ mylazyvim configuration setup complete"
+    else
+        echo "Error: Failed to clone mylazyvim repository"
+        # If clone failed and we had a backup, restore it
+        if [[ -d "$backup_dir" ]]; then
+            echo "Restoring backup configuration"
+            mv "$backup_dir" "$nvim_dir"
+        fi
+        exit 1
+    fi
+}
+
 # Main execution
 echo "Starting dotfiles setup..."
 setup_tpm
 setup_tmux
+setup_mylazyvim
 echo "All dotfiles setup complete!"
