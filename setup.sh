@@ -37,36 +37,55 @@ setup_tpm() {
 
 # Function to setup tmux configuration
 setup_tmux() {
-    local source_file="$SCRIPT_DIR/tmux/tmux.conf"
     local target_dir="$HOME/.config/tmux"
-    local target_file="$target_dir/tmux.conf"
-    local backup_file="$target_dir/tmux.conf.bak"
+    local backup_dir="$HOME/.config/tmux.bak"
+    local repo_url="git@github.com:bitquester10/tmux-conf.git"
 
     echo "Setting up tmux configuration..."
 
-    # Check if source file exists
-    if [[ ! -f "$source_file" ]]; then
-        echo "Error: Source file $source_file does not exist!"
+    # Create .config directory if it doesn't exist
+    mkdir -p "$HOME/.config"
+
+    # If target directory exists, rename it to backup
+    if [[ -d "$target_dir" ]]; then
+        echo "Existing tmux config found, backing up to $backup_dir"
+        # Remove existing backup if it exists
+        if [[ -d "$backup_dir" ]]; then
+            echo "Removing existing backup at $backup_dir"
+            rm -rf "$backup_dir"
+        fi
+        mv "$target_dir" "$backup_dir"
+    fi
+
+    # Clone the tmux-conf repository
+    echo "Cloning tmux-conf repository to $target_dir"
+    if git clone "$repo_url" "$target_dir"; then
+        echo "✓ tmux configuration cloned successfully"
+
+        # Install tmux plugins using TPM
+        local tpm_install_script="$HOME/.tmux/plugins/tpm/bin/install_plugins"
+        if [[ -f "$tpm_install_script" ]]; then
+            echo "Installing tmux plugins..."
+            if "$tpm_install_script"; then
+                echo "✓ tmux plugins installed successfully"
+            else
+                echo "Warning: Failed to install tmux plugins, but continuing..."
+            fi
+        else
+            echo "Warning: TPM install script not found at $tpm_install_script"
+            echo "Make sure TPM is installed first by running setup_tpm"
+        fi
+
+        echo "✓ tmux configuration setup complete"
+    else
+        echo "Error: Failed to clone tmux-conf repository"
+        # If clone failed and we had a backup, restore it
+        if [[ -d "$backup_dir" ]]; then
+            echo "Restoring backup configuration"
+            mv "$backup_dir" "$target_dir"
+        fi
         exit 1
     fi
-
-    # Create the target directory if it doesn't exist
-    mkdir -p "$target_dir"
-
-    # If target exists and is a regular file (not a symlink), back it up
-    if [[ -f "$target_file" && ! -L "$target_file" ]]; then
-        echo "Backing up existing $target_file to $backup_file"
-        mv "$target_file" "$backup_file"
-    elif [[ -L "$target_file" ]]; then
-        echo "Removing existing symlink $target_file"
-        rm "$target_file"
-    fi
-
-    # Create the symlink
-    echo "Creating symlink: $target_file -> $source_file"
-    ln -s "$source_file" "$target_file"
-
-    echo "✓ tmux configuration setup complete"
 }
 
 # Function to setup mylazyvim configuration
