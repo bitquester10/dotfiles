@@ -38,8 +38,9 @@ setup_tpm() {
 # Function to setup tmux configuration
 setup_tmux() {
     local source_file="$SCRIPT_DIR/tmux/tmux.conf"
-    local target_file="$HOME/.tmux.conf"
-    local backup_file="$HOME/.tmux.conf.bak"
+    local target_dir="$HOME/.config/tmux"
+    local target_file="$target_dir/tmux.conf"
+    local backup_file="$target_dir/tmux.conf.bak"
 
     echo "Setting up tmux configuration..."
 
@@ -48,6 +49,9 @@ setup_tmux() {
         echo "Error: Source file $source_file does not exist!"
         exit 1
     fi
+
+    # Create the target directory if it doesn't exist
+    mkdir -p "$target_dir"
 
     # If target exists and is a regular file (not a symlink), back it up
     if [[ -f "$target_file" && ! -L "$target_file" ]]; then
